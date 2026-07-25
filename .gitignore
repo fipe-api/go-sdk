@@ -1,0 +1,14 @@
+# Binaries and build output
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Coverage
+coverage.*
+
+# IDE
+.idea/
+.vscode/
