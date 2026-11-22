@@ -99,7 +99,7 @@ The plate quota is monthly: 5 lookups without a token, 10 successful lookups wit
 
 ### Reference months
 
-Prices are published per monthly reference table. All endpoints except `VehicleByPlate` accept `fipe.WithReference` to query a past table:
+Prices are published per monthly reference table. All endpoints except `References` and `VehicleByPlate` accept `fipe.WithReference` to query a past table:
 
 ```go
 refs, _ := client.References(ctx) // GET /references — e.g. {Code: "308", Month: "abril de 2024"}
