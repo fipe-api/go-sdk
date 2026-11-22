@@ -243,3 +243,66 @@ func TestInvalidJSON(t *testing.T) {
 		t.Fatal("expected decode error, got nil")
 	}
 }
+
+func TestVehicleByPlate(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/plates/ABC1D23" {
+			t.Errorf("path = %q, want %q", r.URL.Path, "/plates/ABC1D23")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Plate-Quota-Limit", "500")
+		w.Header().Set("X-Plate-Quota-Remaining", "499")
+		w.Write([]byte(`{
+			"brand": "Volkswagen",
+			"chassis": "*****P246344",
+			"city": "LOBATO",
+			"color": "Vermelha",
+			"fipePrices": [{"codeFipe": "005102-0", "model": "Santana CS/CD/CG", "price": "R$ 8.848,00"}],
+			"fuel": "Álcool",
+			"imported": false,
+			"model": "SANTANA CG",
+			"plate": "ABC1D23",
+			"power": "94 cv",
+			"segment": "Auto",
+			"state": "PR",
+			"year": "1986"
+		}`))
+	})
+
+	got, err := c.VehicleByPlate(context.Background(), "ABC1D23")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := &PlateVehicle{
+		Plate:      "ABC1D23",
+		Brand:      "Volkswagen",
+		Model:      "SANTANA CG",
+		Year:       "1986",
+		Color:      "Vermelha",
+		Fuel:       "Álcool",
+		Power:      "94 cv",
+		Segment:    "Auto",
+		Chassis:    "*****P246344",
+		City:       "LOBATO",
+		State:      "PR",
+		FipePrices: []PlateFipePrice{{CodeFipe: "005102-0", Model: "Santana CS/CD/CG", Price: "R$ 8.848,00"}},
+		Quota:      PlateQuota{Limit: 500, Remaining: 499},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("result = %+v, want %+v", got, want)
+	}
+}
+
+func TestVehicleByPlateWithoutQuotaHeaders(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"plate": "ABC1234"}`))
+	})
+
+	got, err := c.VehicleByPlate(context.Background(), "ABC1234")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Quota != (PlateQuota{}) {
+		t.Errorf("Quota = %+v, want zero value", got.Quota)
+	}
+}

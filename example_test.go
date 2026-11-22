@@ -93,3 +93,17 @@ func ExampleWithReference() {
 	}
 	fmt.Println(len(brands))
 }
+
+func ExampleClient_VehicleByPlate() {
+	client := fipe.New(fipe.WithSubscriptionToken("your-token"))
+
+	vehicle, err := client.VehicleByPlate(context.Background(), "ABC1D23")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(vehicle.Brand, vehicle.Model, vehicle.Year)
+	for _, p := range vehicle.FipePrices {
+		fmt.Println(p.CodeFipe, p.Model, p.Price)
+	}
+	fmt.Println("lookups left this month:", vehicle.Quota.Remaining)
+}

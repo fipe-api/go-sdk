@@ -3,8 +3,32 @@ package fipe
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
+	"strconv"
 )
+
+// VehicleByPlate returns the vehicle data and the FIPE prices for a license
+// plate in the old or the Mercosul format (e.g. "ABC1234" or "ABC1D23").
+// PlateVehicle.Quota holds the monthly plate lookup quota.
+//
+// This endpoint is in alpha and can change.
+func (c *Client) VehicleByPlate(ctx context.Context, plate string) (*PlateVehicle, error) {
+	var out PlateVehicle
+	path := "/plates/" + url.PathEscape(plate)
+	header, err := c.getWithHeader(ctx, path, &out)
+	if err != nil {
+		return nil, err
+	}
+	out.Quota = parsePlateQuota(header)
+	return &out, nil
+}
+
+func parsePlateQuota(h http.Header) PlateQuota {
+	limit, _ := strconv.Atoi(h.Get("X-Plate-Quota-Limit"))
+	remaining, _ := strconv.Atoi(h.Get("X-Plate-Quota-Remaining"))
+	return PlateQuota{Limit: limit, Remaining: remaining}
+}
 
 // References lists the FIPE monthly reference tables, newest first.
 func (c *Client) References(ctx context.Context) ([]Reference, error) {

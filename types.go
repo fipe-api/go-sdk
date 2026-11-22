@@ -55,3 +55,36 @@ type PriceHistory struct {
 	Price     string `json:"price"`
 	Reference string `json:"reference"`
 }
+
+// PlateVehicle holds the vehicle data and the FIPE prices for a license plate.
+type PlateVehicle struct {
+	Plate      string           `json:"plate"`
+	Brand      string           `json:"brand"`
+	Model      string           `json:"model"`
+	Year       string           `json:"year"`
+	Color      string           `json:"color"`
+	Fuel       string           `json:"fuel"`
+	Power      string           `json:"power"`
+	Segment    string           `json:"segment"`
+	Chassis    string           `json:"chassis"`
+	City       string           `json:"city"`
+	State      string           `json:"state"`
+	Imported   bool             `json:"imported"`
+	FipePrices []PlateFipePrice `json:"fipePrices"`
+	Quota      PlateQuota       `json:"-"`
+}
+
+// PlateFipePrice is the FIPE price of one model that matches a plate.
+type PlateFipePrice struct {
+	CodeFipe string `json:"codeFipe"`
+	Model    string `json:"model"`
+	Price    string `json:"price"`
+}
+
+// PlateQuota is the monthly plate lookup quota from the X-Plate-Quota-Limit
+// and X-Plate-Quota-Remaining response headers. The values are zero when the
+// API does not send the headers.
+type PlateQuota struct {
+	Limit     int
+	Remaining int
+}

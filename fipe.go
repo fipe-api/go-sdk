@@ -65,6 +65,11 @@ func WithReference(code int) RequestOption {
 }
 
 func (c *Client) get(ctx context.Context, path string, out any, opts ...RequestOption) error {
+	_, err := c.getWithHeader(ctx, path, out, opts...)
+	return err
+}
+
+func (c *Client) getWithHeader(ctx context.Context, path string, out any, opts ...RequestOption) (http.Header, error) {
 	q := url.Values{}
 	for _, opt := range opts {
 		opt(q)
@@ -76,7 +81,7 @@ func (c *Client) get(ctx context.Context, path string, out any, opts ...RequestO
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return fmt.Errorf("fipe: build request: %w", err)
+		return nil, fmt.Errorf("fipe: build request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	if c.token != "" {
@@ -85,17 +90,17 @@ func (c *Client) get(ctx context.Context, path string, out any, opts ...RequestO
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("fipe: %w", err)
+		return nil, fmt.Errorf("fipe: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return &APIError{StatusCode: resp.StatusCode, Body: string(bytes.TrimSpace(body))}
+		return resp.Header, &APIError{StatusCode: resp.StatusCode, Body: string(bytes.TrimSpace(body))}
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-		return fmt.Errorf("fipe: decode response: %w", err)
+		return resp.Header, fmt.Errorf("fipe: decode response: %w", err)
 	}
-	return nil
+	return resp.Header, nil
 }

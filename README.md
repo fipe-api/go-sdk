@@ -83,9 +83,23 @@ for _, h := range history.PriceHistory {
 }
 ```
 
+Look up by license plate (alpha, can change). The plate can use the old or the Mercosul format:
+
+```go
+vehicle, _ := client.VehicleByPlate(ctx, "ABC1D23") // GET /plates/ABC1D23
+
+fmt.Println(vehicle.Brand, vehicle.Model, vehicle.Year)
+for _, p := range vehicle.FipePrices {
+	fmt.Println(p.CodeFipe, p.Model, p.Price)
+}
+fmt.Println(vehicle.Quota.Remaining, "of", vehicle.Quota.Limit) // monthly plate quota
+```
+
+The plate quota is monthly: 5 lookups without a token, 10 successful lookups with a free token, and 500 successful lookups with a paid subscription. The plate endpoint does not accept `fipe.WithReference`.
+
 ### Reference months
 
-Prices are published per monthly reference table. Every endpoint accepts `fipe.WithReference` to query a past table:
+Prices are published per monthly reference table. All endpoints except `VehicleByPlate` accept `fipe.WithReference` to query a past table:
 
 ```go
 refs, _ := client.References(ctx) // GET /references — e.g. {Code: "308", Month: "abril de 2024"}
