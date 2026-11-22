@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIPE Go SDK: Go client for the FIPE API (Tabela FIPE)</title>
+<meta name="description" content="Documentation for the FIPE Go SDK, a zero-dependency Go client for the FIPE API. Query Brazilian vehicle prices (Tabela FIPE) with a typed, context-aware client. Requires Go 1.22 or later.">
+<link rel="canonical" href="https://fipe-api.github.io/go-sdk/">
+<meta name="robots" content="index, follow">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="FIPE Go SDK: Go client for the FIPE API">
+<meta property="og:description" content="A zero-dependency, typed Go client for the FIPE API (Brazilian vehicle prices). Install: go get github.com/fipe-api/go-sdk">
+<meta property="og:url" content="https://fipe-api.github.io/go-sdk/">
+<meta property="og:site_name" content="FIPE Go SDK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FIPE Go SDK: Go client for the FIPE API">
+<meta name="twitter:description" content="A zero-dependency, typed Go client for the FIPE API (Brazilian vehicle prices). Install: go get github.com/fipe-api/go-sdk">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2300ADD8'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='15' font-weight='bold' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "FIPE Go SDK",
+  "description": "Go SDK for the FIPE API. A zero-dependency, typed client for Brazilian vehicle prices (Tabela FIPE). Requires Go 1.22 or later.",
+  "codeRepository": "https://github.com/fipe-api/go-sdk",
+  "programmingLanguage": "Go",
+  "runtimePlatform": "Go 1.22",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://fipe-api.github.io/go-sdk/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Which Go versions does the FIPE Go SDK support?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The module requires Go 1.22 or later. It uses only the standard library and has no third-party dependencies." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need an API token to use the SDK?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. The SDK works without a token on the FIPE API free tier, which is rate limited. Pass fipe.WithSubscriptionToken to fipe.New to lift the limits." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I set timeouts or use a custom HTTP client?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Every method takes a context.Context, so use context.WithTimeout for a deadline per call. To change transport settings, pass your own *http.Client with fipe.WithHTTPClient." }
+    },
+    {
+      "@type": "Question",
+      "name": "How does the SDK report errors?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Non-2xx responses return a *fipe.APIError with the status code and response body. A 404 matches fipe.ErrNotFound and a 429 matches fipe.ErrTooManyRequests with errors.Is." }
+    }
+  ]
+}
+</script>
+
+<style>
+:root {
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #59636e;
+  --border: #d1d9e0;
+  --border-soft: #eaeef2;
+  --accent: #007d9c;
+  --code-bg: #f6f8fa;
+  --header-bg: rgba(255, 255, 255, .92);
+  --k: #cf222e;
+  --t: #953800;
+  --s: #0a3069;
+  --c: #59636e;
+  --m: #6639ba;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #9198a1;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --accent: #4fc8e6;
+    --code-bg: #161b22;
+    --header-bg: rgba(13, 17, 23, .92);
+    --k: #ff7b72;
+    --t: #ffa657;
+    --s: #a5d6ff;
+    --c: #8b949e;
+    --m: #d2a8ff;
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  font-size: 16px;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+p code, li code, td code, h3 code {
+  font-size: .875em;
+  background: var(--code-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--header-bg);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+.nav { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--fg); font-weight: 600; font-size: 15px; }
+.brand:hover { text-decoration: none; }
+.brand svg { flex-shrink: 0; }
+.nav ul { display: flex; gap: 20px; list-style: none; align-items: center; }
+.nav ul a { color: var(--muted); font-size: 14px; }
+.nav ul a:hover { color: var(--fg); text-decoration: none; }
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  .nav ul li.hide-m { display: none; }
+}
+
+.hero { padding: 56px 0 8px; }
+h1 { font-size: 32px; line-height: 1.25; letter-spacing: -.02em; margin-bottom: 12px; }
+.hero .lead { font-size: 17px; color: var(--muted); max-width: 62ch; }
+.hero .lead strong { color: var(--fg); font-weight: 600; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.badges span {
+  font-size: 12.5px; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 12px;
+}
+
+section { padding-top: 44px; }
+h2 {
+  font-size: 22px; letter-spacing: -.01em;
+  padding-bottom: 8px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+h3 { font-size: 17px; margin: 22px 0 8px; }
+section p { margin-bottom: 12px; max-width: 70ch; }
+section p.note { color: var(--muted); font-size: 14.5px; }
+
+.code {
+  position: relative;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 14px 0 20px;
+  overflow: hidden;
+}
+.code pre {
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.6;
+  tab-size: 4;
+}
+.code button {
+  position: absolute; top: 8px; right: 8px;
+  font-family: inherit; font-size: 12px;
+  color: var(--muted); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 10px; cursor: pointer;
+  opacity: 0; transition: opacity .12s;
+}
+.code:hover button, .code button:focus { opacity: 1; }
+.code button:hover { color: var(--fg); }
+.k { color: var(--k); }
+.t { color: var(--t); }
+.s { color: var(--s); }
+.c { color: var(--c); }
+.m { color: var(--m); }
+
+.tbl-scroll { overflow-x: auto; margin: 14px 0 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th {
+  text-align: left; font-size: 12.5px; font-weight: 600; color: var(--muted);
+  border-bottom: 1px solid var(--border); padding: 6px 10px;
+}
+td { border-bottom: 1px solid var(--border-soft); padding: 8px 10px; vertical-align: top; }
+td code { white-space: nowrap; }
+
+details { border-bottom: 1px solid var(--border-soft); }
+summary {
+  font-weight: 600; font-size: 15.5px;
+  padding: 14px 0; cursor: pointer; list-style: none;
+  display: flex; justify-content: space-between; gap: 16px;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--muted); }
+details[open] summary::after { content: "\2212"; }
+details p { padding-bottom: 14px; color: var(--muted); max-width: 68ch; }
+
+footer {
+  margin-top: 64px; padding: 28px 0 40px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px; color: var(--muted);
+}
+footer .links { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav wrap" aria-label="Main">
+    <a class="brand" href="#">
+      <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6" fill="#00ADD8"/><text x="16" y="22" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#fff" text-anchor="middle">F</text></svg>
+      FIPE Go SDK
+    </a>
+    <ul>
+      <li class="hide-m"><a href="#install">Install</a></li>
+      <li class="hide-m"><a href="#quick-start">Quick start</a></li>
+      <li class="hide-m"><a href="#methods">Methods</a></li>
+      <li class="hide-m"><a href="#faq">FAQ</a></li>
+      <li><a href="https://pkg.go.dev/github.com/fipe-api/go-sdk">pkg.go.dev</a></li>
+      <li><a href="https://github.com/fipe-api/go-sdk">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>Go SDK for the FIPE API</h1>
+    <p class="lead">
+      <strong>github.com/fipe-api/go-sdk</strong> is a typed Go client for the
+      average vehicle prices of the Brazilian market (Tabela FIPE). It covers cars,
+      motorcycles and trucks. You do not write HTTP or JSON code.
+    </p>
+    <div class="badges">
+      <span>Go 1.22+</span>
+      <span>Zero dependencies</span>
+      <span>context.Context on every call</span>
+      <span>MIT license</span>
+    </div>
+  </div>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p>Add the module to your project:</p>
+    <div class="code">
+      <pre><code>go get github.com/fipe-api/go-sdk</code></pre>
+      <button data-copy="go get github.com/fipe-api/go-sdk">Copy</button>
+    </div>
+    <p class="note">Import it with the <code>fipe</code> name:
+       <code>fipe "github.com/fipe-api/go-sdk"</code></p>
+  </section>
+
+  <section id="quick-start">
+    <h2>Quick start</h2>
+    <p>Create a client with <code>fipe.New</code> and send a query. You do not need
+       configuration or a token to start:</p>
+    <div class="code">
+      <pre><code><span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">"context"</span>
+	<span class="s">"fmt"</span>
+	<span class="s">"log"</span>
+
+	fipe <span class="s">"github.com/fipe-api/go-sdk"</span>
+)
+
+<span class="k">func</span> <span class="m">main</span>() {
+	client := fipe.<span class="m">New</span>()
+	ctx := context.<span class="m">Background</span>()
+
+	brands, err := client.<span class="m">Brands</span>(ctx, fipe.Cars)
+	<span class="k">if</span> err != <span class="k">nil</span> {
+		log.<span class="m">Fatal</span>(err)
+	}
+	<span class="k">for</span> _, b := <span class="k">range</span> brands {
+		fmt.<span class="m">Println</span>(b.Code, b.Name)
+	}
+}</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+    <p>Vehicle types are constants of type <code>fipe.VehicleType</code>:
+       <code>fipe.Cars</code>, <code>fipe.Motorcycles</code> and
+       <code>fipe.Trucks</code>.</p>
+
+    <h3>Get a price</h3>
+    <p>Go from brand to model to year to get the average price of a vehicle:</p>
+    <div class="code">
+      <pre><code>models, _ := client.<span class="m">Models</span>(ctx, fipe.Cars, <span class="s">"59"</span>)
+years, _ := client.<span class="m">Years</span>(ctx, fipe.Cars, <span class="s">"59"</span>, <span class="s">"5940"</span>)
+vehicle, _ := client.<span class="m">Vehicle</span>(ctx, fipe.Cars, <span class="s">"59"</span>, <span class="s">"5940"</span>, <span class="s">"2014-3"</span>)
+
+fmt.<span class="m">Println</span>(vehicle.Model, vehicle.Price)</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+    <p>If you know the FIPE code of the vehicle, use it directly:</p>
+    <div class="code">
+      <pre><code>vehicle, _ := client.<span class="m">VehicleByFipeCode</span>(ctx, fipe.Cars, <span class="s">"005340-6"</span>, <span class="s">"2014-3"</span>)
+history, _ := client.<span class="m">HistoryByFipeCode</span>(ctx, fipe.Cars, <span class="s">"005340-6"</span>, <span class="s">"2014-3"</span>)
+
+<span class="k">for</span> _, h := <span class="k">range</span> history.PriceHistory {
+	fmt.<span class="m">Println</span>(h.Month, h.Price)
+}</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+  </section>
+
+  <section id="configuration">
+    <h2>Configuration</h2>
+
+    <h3>Authentication</h3>
+    <p>The client works without a token on the free tier. The free tier has a rate
+       limit. To use a subscription token:</p>
+    <div class="code">
+      <pre><code>client := fipe.<span class="m">New</span>(fipe.<span class="m">WithSubscriptionToken</span>(<span class="s">"your-token"</span>))</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+
+    <h3>HTTP client and timeouts</h3>
+    <p>Every method takes a <code>context.Context</code>. Use it to set a deadline or
+       to cancel a request. To change the transport, give your own
+       <code>*http.Client</code>:</p>
+    <div class="code">
+      <pre><code>client := fipe.<span class="m">New</span>(
+	fipe.<span class="m">WithHTTPClient</span>(&amp;http.<span class="t">Client</span>{Timeout: <span class="t">10</span> * time.Second}),
+	fipe.<span class="m">WithSubscriptionToken</span>(<span class="s">"your-token"</span>),
+)
+
+ctx, cancel := context.<span class="m">WithTimeout</span>(context.<span class="m">Background</span>(), <span class="t">5</span>*time.Second)
+<span class="k">defer</span> <span class="m">cancel</span>()
+
+brands, err := client.<span class="m">Brands</span>(ctx, fipe.Cars)</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+    <p class="note"><code>fipe.WithBaseURL</code> changes the API base URL. Use it to
+       point the client to a test server.</p>
+
+    <h3>Reference months</h3>
+    <p>The API publishes prices in monthly reference tables. Every method accepts
+       <code>fipe.WithReference</code> to query a past month:</p>
+    <div class="code">
+      <pre><code>refs, _ := client.<span class="m">References</span>(ctx) <span class="c">// e.g. {Code: "308", Month: "abril de 2024"}</span>
+
+brands, _ := client.<span class="m">Brands</span>(ctx, fipe.Cars, fipe.<span class="m">WithReference</span>(<span class="t">308</span>))</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+  </section>
+
+  <section id="methods">
+    <h2>Client methods</h2>
+    <p>All methods take a <code>context.Context</code>, return typed values and an
+       <code>error</code>, and accept optional <code>fipe.RequestOption</code> values.</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>Brands</code></td><td><code>/{type}/brands</code></td><td>All brands for a vehicle type</td></tr>
+          <tr><td><code>Models</code></td><td><code>/{type}/brands/{brand}/models</code></td><td>Models of a brand</td></tr>
+          <tr><td><code>Years</code></td><td><code>/{type}/brands/{brand}/models/{model}/years</code></td><td>Years available for a model</td></tr>
+          <tr><td><code>Vehicle</code></td><td><code>/{type}/brands/{brand}/models/{model}/years/{year}</code></td><td>Average price for a brand, model and year</td></tr>
+          <tr><td><code>YearsByBrand</code></td><td><code>/{type}/brands/{brand}/years</code></td><td>Years with prices for a brand</td></tr>
+          <tr><td><code>ModelsByBrandYear</code></td><td><code>/{type}/brands/{brand}/years/{year}/models</code></td><td>Models of a brand for a year</td></tr>
+          <tr><td><code>YearsByFipeCode</code></td><td><code>/{type}/{fipeCode}/years</code></td><td>Years available for a FIPE code</td></tr>
+          <tr><td><code>VehicleByFipeCode</code></td><td><code>/{type}/{fipeCode}/years/{year}</code></td><td>Average price for a FIPE code</td></tr>
+          <tr><td><code>HistoryByFipeCode</code></td><td><code>/{type}/{fipeCode}/years/{year}/history</code></td><td>Price history by month for a FIPE code</td></tr>
+          <tr><td><code>References</code></td><td><code>/references</code></td><td>Available monthly reference tables</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="error-handling">
+    <h2>Error handling</h2>
+    <p>A non-2xx response returns a <code>*fipe.APIError</code> with the HTTP status
+       code and the response body. A 404 matches <code>fipe.ErrNotFound</code> and a
+       429 matches <code>fipe.ErrTooManyRequests</code> with <code>errors.Is</code>:</p>
+    <div class="code">
+      <pre><code>vehicle, err := client.<span class="m">Vehicle</span>(ctx, fipe.Cars, <span class="s">"59"</span>, <span class="s">"5940"</span>, <span class="s">"1900-1"</span>)
+<span class="k">switch</span> {
+<span class="k">case</span> errors.<span class="m">Is</span>(err, fipe.ErrNotFound):
+	<span class="c">// unknown brand, model or year</span>
+<span class="k">case</span> errors.<span class="m">Is</span>(err, fipe.ErrTooManyRequests):
+	<span class="c">// rate limited: wait, or use a subscription token</span>
+<span class="k">case</span> err != <span class="k">nil</span>:
+	<span class="k">var</span> apiErr *fipe.<span class="t">APIError</span>
+	<span class="k">if</span> errors.<span class="m">As</span>(err, &amp;apiErr) {
+		log.<span class="m">Printf</span>(<span class="s">"API returned %d: %s"</span>, apiErr.StatusCode, apiErr.Body)
+	}
+}</code></pre>
+      <button data-copy-block>Copy</button>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>FAQ</h2>
+    <details>
+      <summary>Which Go versions are supported?</summary>
+      <p>The module requires Go 1.22 or later. It uses only the standard library and
+         has no third-party dependencies.</p>
+    </details>
+    <details>
+      <summary>Do I need an API token?</summary>
+      <p>No. The SDK works without a token on the free tier. The free tier has a
+         rate limit. Pass <code>fipe.WithSubscriptionToken</code> to
+         <code>fipe.New</code> to lift the limits. The
+         <a href="https://fipe.api.br">FIPE API</a> issues the tokens.</p>
+    </details>
+    <details>
+      <summary>Can I share one client between goroutines?</summary>
+      <p>Yes. The <code>fipe.Client</code> does not change after <code>fipe.New</code>,
+         and <code>*http.Client</code> is safe for concurrent use. Create one client
+         and use it in all goroutines.</p>
+    </details>
+    <details>
+      <summary>Where does the data come from?</summary>
+      <p>The prices come from the FIPE API. It publishes the Tabela FIPE: the average
+         vehicle prices of the Brazilian market from Fundação Instituto de Pesquisas
+         Econômicas. The data changes every month.</p>
+    </details>
+    <details>
+      <summary>Is there a runnable example?</summary>
+      <p>Yes. The repository has an example program. Run
+         <code>go run ./examples</code> to list brands and show a live price.</p>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/fipe-api/go-sdk">GitHub</a>
+      <a href="https://pkg.go.dev/github.com/fipe-api/go-sdk">pkg.go.dev</a>
+      <a href="https://fipe.api.br">FIPE API</a>
+      <a href="https://github.com/fipe-api/go-sdk/blob/main/LICENSE">MIT License</a>
+    </div>
+    The FIPE Go SDK is an open-source client for the FIPE API. Price data © Fundação Instituto de Pesquisas Econômicas.
+  </div>
+</footer>
+
+<script>
+function bindCopy(btn, getText) {
+  btn.addEventListener("click", function () {
+    navigator.clipboard.writeText(getText()).then(function () {
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy"; }, 1400);
+    });
+  });
+}
+document.querySelectorAll("[data-copy]").forEach(function (btn) {
+  bindCopy(btn, function () { return btn.getAttribute("data-copy"); });
+});
+document.querySelectorAll("[data-copy-block]").forEach(function (btn) {
+  bindCopy(btn, function () { return btn.closest(".code").querySelector("pre").innerText; });
+});
+</script>
+</body>
+</html>
